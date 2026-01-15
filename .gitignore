@@ -1,0 +1,15 @@
+# Binaries
+ag-quota
+ag-quota.exe
+
+# Config
+.env
+*.json
+
+# Go
+vendor/
+go.sum
+
+# IDE
+.vscode/
+.idea/
