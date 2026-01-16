@@ -1,0 +1,305 @@
+package ui
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"sort"
+	"strings"
+
+	"github.com/fatih/color"
+	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
+	"github.com/phamminhkhoa2k4/khoata-tool/internal/models"
+)
+
+// DisplayQuotaSummaryJSON displays quota information in JSON format
+func DisplayQuotaSummaryJSON(summary *models.QuotaSummary) error {
+	data, err := json.MarshalIndent(summary, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal JSON: %w", err)
+	}
+	fmt.Println(string(data))
+	return nil
+}
+
+// DisplayQuotaSummary displays quota information in a formatted table
+func DisplayQuotaSummary(summary *models.QuotaSummary) {
+	// Header
+	fmt.Println()
+	color.Cyan("  ✨ Khoata Quota Status")
+	fmt.Println()
+
+	fmt.Printf("  Fetched: %s\n", summary.FetchedAt.Format("2006-01-02 15:04:05 MST"))
+	fmt.Println()
+
+	// Sort models by display name
+	modelsList := make([]models.ModelQuota, len(summary.Models))
+	copy(modelsList, summary.Models)
+	sort.Slice(modelsList, func(i, j int) bool {
+		return modelsList[i].DisplayName < modelsList[j].DisplayName
+	})
+
+	// Create table
+	t := table.NewWriter()
+
+	// Set style (Rounded is modern and clean)
+	t.SetStyle(table.StyleRounded)
+
+	// Customize style for specific look
+	style := table.StyleRounded
+	style.Color.Header = text.Colors{text.FgCyan, text.Bold}
+	style.Color.Border = text.Colors{text.FgCyan}
+	style.Color.Separator = text.Colors{text.FgCyan}
+	t.SetStyle(style)
+
+	t.AppendHeader(table.Row{"Model", "Quota", "Reset In", "Status"})
+
+	for _, model := range modelsList {
+		if model.DisplayName == "" {
+			continue
+		}
+
+		percentage := model.GetRemainingPercentage()
+
+		// Colorize Quota cell
+		var quotaColor text.Colors
+		if percentage <= 10 {
+			quotaColor = text.Colors{text.FgRed, text.Bold}
+		} else if percentage <= 30 {
+			quotaColor = text.Colors{text.FgYellow}
+		} else {
+			quotaColor = text.Colors{text.FgGreen}
+		}
+		quotaStr := fmt.Sprintf("%3d%%", percentage)
+
+		// Format Status with colors
+		statusStr := model.GetStatusString()
+		var statusColor text.Colors
+		switch statusStr {
+		case "OK":
+			statusStr = "✓ OK"
+			statusColor = text.Colors{text.FgGreen}
+		case "LOW":
+			statusStr = "⚠ LOW"
+			statusColor = text.Colors{text.FgYellow}
+		case "EMPTY":
+			statusStr = "✗ EMPTY"
+			statusColor = text.Colors{text.FgRed}
+		}
+
+		t.AppendRow(table.Row{
+			model.DisplayName,
+			quotaColor.Sprint(quotaStr),
+			formatResetTime(model),
+			statusColor.Sprint(statusStr),
+		})
+	}
+
+	// Indent the table slightly for better look
+	rendered := t.Render()
+	indented := "  " + strings.ReplaceAll(rendered, "\n", "\n  ")
+	fmt.Println(indented)
+	fmt.Println()
+
+	// Footer with default model
+	if summary.DefaultModelID != "" {
+		for _, model := range modelsList {
+			if model.ModelID == summary.DefaultModelID {
+				color.Cyan("  ⭐ Default Model: %s", model.DisplayName)
+				break
+			}
+		}
+		fmt.Println()
+	}
+}
+
+// formatResetTime formats the time until reset in a human-readable format
+func formatResetTime(model models.ModelQuota) string {
+	duration := model.GetTimeUntilReset()
+
+	if duration < 0 {
+		return "Regenerating..."
+	}
+
+	hours := int(duration.Hours())
+	minutes := int(duration.Minutes()) % 60
+
+	if hours > 24 {
+		days := hours / 24
+		hours = hours % 24
+		return fmt.Sprintf("%dd %02dh", days, hours)
+	}
+
+	if hours > 0 {
+		return fmt.Sprintf("%dh %02dm", hours, minutes)
+	}
+
+	return fmt.Sprintf("%dm", minutes)
+}
+
+// DisplayError displays an error message
+func DisplayError(message string, err error) {
+	color.Red("Error: %s", message)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "  %v\n", err)
+	}
+}
+
+// DisplayNotLoggedIn displays a message when user is not logged in
+func DisplayNotLoggedIn() {
+	color.Red("Not logged in")
+	fmt.Println()
+	fmt.Println("Please run the following command to authenticate:")
+	color.Cyan("  ag-khoata login")
+	fmt.Println()
+}
+
+// DisplayLoading displays a loading message
+func DisplayLoading(message string) {
+	fmt.Printf("%s", message)
+}
+
+// DisplaySuccess displays a success message
+func DisplaySuccess(message string) {
+	color.Green("✓ %s", message)
+}
+
+// Spinner represents a simple text spinner
+type Spinner struct {
+	frames []string
+	index  int
+}
+
+// NewSpinner creates a new spinner
+func NewSpinner() *Spinner {
+	return &Spinner{
+		frames: []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
+		index:  0,
+	}
+}
+
+// Next returns the next spinner frame
+func (s *Spinner) Next() string {
+	frame := s.frames[s.index]
+	s.index = (s.index + 1) % len(s.frames)
+	return frame
+}
+
+// AccountQuotaResult represents quota information for a single account
+type AccountQuotaResult struct {
+	Email        string               `json:"email"`
+	QuotaSummary *models.QuotaSummary `json:"quota_summary,omitempty"`
+	Error        string               `json:"error,omitempty"`
+}
+
+// DisplayAllAccountsQuotaJSON displays quota for all accounts in JSON format
+func DisplayAllAccountsQuotaJSON(results []*AccountQuotaResult) error {
+	data, err := json.MarshalIndent(results, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal JSON: %w", err)
+	}
+	fmt.Println(string(data))
+	return nil
+}
+
+// DisplayAllAccountsQuota displays quota for all accounts in a formatted table
+func DisplayAllAccountsQuota(results []*AccountQuotaResult) {
+	if len(results) == 0 {
+		color.Yellow("No accounts to display")
+		return
+	}
+
+	// Header
+	fmt.Println()
+	color.Cyan("  ✨ Khoata Quota Status - All Accounts")
+	fmt.Println()
+
+	// Create a table for each account
+	for _, result := range results {
+		// Account header
+		if result.Error != "" {
+			color.Red("  ✗ %s", result.Email)
+			fmt.Printf("    Error: %s\n", result.Error)
+			fmt.Println()
+			continue
+		}
+
+		if result.QuotaSummary == nil {
+			color.Yellow("  ⚠ %s - No data", result.Email)
+			fmt.Println()
+			continue
+		}
+
+		// Display account email
+		color.Cyan("  📧 %s", result.Email)
+		fmt.Println()
+
+		// Sort models by display name
+		modelsList := make([]models.ModelQuota, len(result.QuotaSummary.Models))
+		copy(modelsList, result.QuotaSummary.Models)
+		sort.Slice(modelsList, func(i, j int) bool {
+			return modelsList[i].DisplayName < modelsList[j].DisplayName
+		})
+
+		// Create table
+		t := table.NewWriter()
+		t.SetStyle(table.StyleRounded)
+
+		// Customize style
+		style := table.StyleRounded
+		style.Color.Header = text.Colors{text.FgCyan, text.Bold}
+		style.Color.Border = text.Colors{text.FgCyan}
+		style.Color.Separator = text.Colors{text.FgCyan}
+		t.SetStyle(style)
+
+		t.AppendHeader(table.Row{"Model", "Quota", "Reset In", "Status"})
+
+		for _, model := range modelsList {
+			if model.DisplayName == "" {
+				continue
+			}
+
+			percentage := model.GetRemainingPercentage()
+
+			// Colorize Quota cell
+			var quotaColor text.Colors
+			if percentage <= 10 {
+				quotaColor = text.Colors{text.FgRed, text.Bold}
+			} else if percentage <= 30 {
+				quotaColor = text.Colors{text.FgYellow}
+			} else {
+				quotaColor = text.Colors{text.FgGreen}
+			}
+			quotaStr := fmt.Sprintf("%3d%%", percentage)
+
+			// Format Status with colors
+			statusStr := model.GetStatusString()
+			var statusColor text.Colors
+			switch statusStr {
+			case "OK":
+				statusStr = "✓ OK"
+				statusColor = text.Colors{text.FgGreen}
+			case "LOW":
+				statusStr = "⚠ LOW"
+				statusColor = text.Colors{text.FgYellow}
+			case "EMPTY":
+				statusStr = "✗ EMPTY"
+				statusColor = text.Colors{text.FgRed}
+			}
+
+			t.AppendRow(table.Row{
+				model.DisplayName,
+				quotaColor.Sprint(quotaStr),
+				formatResetTime(model),
+				statusColor.Sprint(statusStr),
+			})
+		}
+
+		// Indent the table
+		rendered := t.Render()
+		indented := "    " + strings.ReplaceAll(rendered, "\n", "\n    ")
+		fmt.Println(indented)
+		fmt.Println()
+	}
+}
