@@ -15,13 +15,26 @@ var (
 	Version    = "1.0.0"
 	BuildTime  = "unknown"
 	jsonOutput bool
+	quotaAll   bool
+)
+
+var (
+	Title   = color.New(color.FgHiBlue, color.Bold)
+	Info    = color.New(color.FgCyan)
+	Success = color.New(color.FgGreen)
+	Warning = color.New(color.FgYellow)
+	Error   = color.New(color.FgRed)
+
+	Muted   = color.New(color.FgHiBlack)
+	Accent  = color.New(color.FgMagenta)
 )
 
 func main() {
 	rootCmd := &cobra.Command{
 		Use:   "ag-khoata",
 		Short: "Check Anti-Gravity (Claude Code) quota and usage",
-		Long:  "A CLI tool to monitor your Anti-Gravity AI model quota and usage in real-time.",
+		Long: `A CLI tool to monitor your Anti-Gravity AI model quota and usage in real-time.
+Manage multiple accounts and check quotas for models like Claude 3.5 Sonnet, Gemini Pro, and more.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			runQuota(cmd, args)
 		},
@@ -60,6 +73,7 @@ func main() {
 	statusCmd := &cobra.Command{
 		Use:   "status",
 		Short: "Check authentication status",
+		Long:  "Display the current logged-in user and token validity status.",
 		Run: func(cmd *cobra.Command, args []string) {
 			token, err := auth.LoadToken()
 			if err != nil {
@@ -73,11 +87,11 @@ func main() {
 			fmt.Println()
 
 			if token.IsValid() {
-				color.Green("✓ Logged in as: %s", token.Email)
-				color.Green("✓ Token status: Valid")
+				color.Green("✅ Logged in as: %s", token.Email)
+				color.Green("✅ Token status: Valid")
 			} else {
-				color.Yellow("⚠ Logged in as: %s", token.Email)
-				color.Yellow("⚠ Token status: Expired (will auto-refresh)")
+				color.Yellow("❌ Logged in as: %s", token.Email)
+				color.Yellow("❌ Token status: Expired (will auto-refresh)")
 			}
 			fmt.Println()
 		},
@@ -87,13 +101,24 @@ func main() {
 	quotaCmd := &cobra.Command{
 		Use:   "quota",
 		Short: "Check quota for all models",
-		Run:   runQuota,
+		Long:  "Fetch and display the current quota status for all available AI models.",
+		Example: `  # Check current account
+  ag-khoata quota
+
+  # Check all accounts
+  ag-khoata quota --all
+
+  # Output as JSON
+  ag-khoata quota -j`,
+		Run: runQuota,
 	}
+	quotaCmd.Flags().BoolVar(&quotaAll, "all", false, "Check quota for all saved accounts")
 
 	// Accounts parent command
 	accountsCmd := &cobra.Command{
 		Use:   "accounts",
 		Short: "Manage saved accounts",
+		Long:  "List, switch between, or remove saved Google accounts.",
 	}
 
 	// Accounts list subcommand
@@ -144,9 +169,10 @@ func main() {
 
 	// Accounts switch subcommand
 	accountsSwitchCmd := &cobra.Command{
-		Use:   "switch [email]",
-		Short: "Switch default account",
-		Args:  cobra.ExactArgs(1),
+		Use:     "switch [email]",
+		Short:   "Switch default account",
+		Example: "  ag-khoata accounts switch user@example.com",
+		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			email := args[0]
 			mgr, err := auth.NewAccountManager()
@@ -166,9 +192,10 @@ func main() {
 
 	// Accounts remove subcommand
 	accountsRemoveCmd := &cobra.Command{
-		Use:   "remove [email]",
-		Short: "Remove a saved account",
-		Args:  cobra.ExactArgs(1),
+		Use:     "remove [email]",
+		Short:   "Remove a saved account",
+		Example: "  ag-khoata accounts remove user@example.com",
+		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			email := args[0]
 			mgr, err := auth.NewAccountManager()
@@ -214,6 +241,11 @@ func main() {
 }
 
 func runQuota(cmd *cobra.Command, args []string) {
+	if quotaAll {
+		runQuotaAll()
+		return
+	}
+
 	// Check if logged in
 	token, err := auth.LoadToken()
 	if err != nil {
@@ -240,5 +272,52 @@ func runQuota(cmd *cobra.Command, args []string) {
 		}
 	} else {
 		ui.DisplayQuotaSummary(quotaSummary)
+	}
+}
+
+func runQuotaAll() {
+	mgr, err := auth.NewAccountManager()
+	if err != nil {
+		ui.DisplayError("Failed to initialize account manager", err)
+		os.Exit(1)
+	}
+
+	accounts, err := mgr.ListAccounts()
+	if err != nil {
+		ui.DisplayError("Failed to list accounts", err)
+		os.Exit(1)
+	}
+
+	if len(accounts) == 0 {
+		fmt.Println("No accounts saved.")
+		return
+	}
+
+	fmt.Printf("Fetching quota for %d accounts...\n", len(accounts))
+
+	client := api.NewClient()
+	results := make([]*ui.AccountQuotaResult, 0, len(accounts))
+
+	for _, acc := range accounts {
+		result := &ui.AccountQuotaResult{
+			Email: acc.Email,
+		}
+
+		summary, err := client.GetQuotaInfoForAccount(acc.Email)
+		if err != nil {
+			result.Error = err.Error()
+		} else {
+			result.QuotaSummary = summary
+		}
+		results = append(results, result)
+	}
+
+	if jsonOutput {
+		if err := ui.DisplayAllAccountsQuotaJSON(results); err != nil {
+			ui.DisplayError("Failed to display JSON", err)
+			os.Exit(1)
+		}
+	} else {
+		ui.DisplayAllAccountsQuota(results)
 	}
 }

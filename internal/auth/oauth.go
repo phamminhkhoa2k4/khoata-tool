@@ -7,6 +7,9 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
+
+	// "os"
 	"os/exec"
 	"runtime"
 	"time"
@@ -17,35 +20,44 @@ import (
 )
 
 const (
-	// Google OAuth2 endpoints
-	GoogleAuthURL  = "https://accounts.google.com/o/oauth2/v2/auth"
-	GoogleTokenURL = "https://oauth2.googleapis.com/token"
-
-	// Default OAuth client ID & Secret (fallback if .env not set)
-	DefaultClientID     = "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com"
-	DefaultClientSecret = "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"
-
-	// Redirect configuration
-	RedirectPort = 42729
-	RedirectURI  = "http://127.0.0.1:42729/callback"
 
 	// OAuth2 scopes
 	Scopes = "https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/userinfo.email"
 )
 
-// getOAuthCredentials returns OAuth credentials from environment or defaults
-func getOAuthCredentials() (clientID, clientSecret string) {
-	// Try to load .env file (ignore error if not found)
-	godotenv.Load()
+var (
+	// These will be overridden by -ldflags during build
+	// Example: -ldflags "-X 'github.com/phamminhkhoa2k4/khoata-tool/internal/auth.embeddedClientID=value'"
+	embeddedClientID     string
+	embeddedClientSecret string
+)
 
-	clientID = os.Getenv("OAUTH_CLIENT_ID")
+// getOAuthCredentials returns OAuth credentials from environment or build-time defaults
+func getOAuthCredentials() (string, string) {
+	// 1. Try to load from .env file (local dev priority)
+	godotenv.Load()
+	clientID := os.Getenv("OAUTH_CLIENT_ID")
+	clientSecret := os.Getenv("OAUTH_CLIENT_SECRET")
+
+	// 2. Fallback to embedded build-time variables (release binary priority)
 	if clientID == "" {
-		clientID = DefaultClientID
+		clientID = embeddedClientID
+	}
+	if clientSecret == "" {
+		clientSecret = embeddedClientSecret
 	}
 
-	clientSecret = os.Getenv("OAUTH_CLIENT_SECRET")
+	// 3. Final fallback (hardcoded for immediate testing if build flags missing)
+	// WARNING: Remove this block in production to ensure no secrets in source code
+	if clientID == "" {
+		clientID = "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com"
+	}
 	if clientSecret == "" {
-		clientSecret = DefaultClientSecret
+		clientSecret = "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"
+	}
+
+	if clientID == "" || clientSecret == "" {
+		panic("OAUTH_CLIENT_ID / OAUTH_CLIENT_SECRET not set. Please use .env or build with ldflags.")
 	}
 
 	return clientID, clientSecret
@@ -54,12 +66,15 @@ func getOAuthCredentials() (clientID, clientSecret string) {
 // GetOAuthConfig returns the OAuth2 configuration
 func GetOAuthConfig() *oauth2.Config {
 	clientID, clientSecret := getOAuthCredentials()
+
 	return &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		Endpoint:     google.Endpoint,
-		Scopes:       []string{"https://www.googleapis.com/auth/cloud-platform", "https://www.googleapis.com/auth/userinfo.email"},
-		RedirectURL:  RedirectURI,
+		Scopes: []string{
+			"https://www.googleapis.com/auth/cloud-platform",
+			"https://www.googleapis.com/auth/userinfo.email",
+		},
 	}
 }
 
@@ -278,7 +293,21 @@ func openBrowser(url string) error {
 		args = []string{url}
 	case "windows":
 		cmd = "cmd"
-		args = []string{"/c", "start", url}
+		// Escape & for cmd shell
+		escapedURL := strings.ReplaceAll(url, "&", "^&")
+		// On Windows, use "cmd /c start"
+		// The first quoted argument to "start" is the window title, so we pass an empty string first
+		// We also need to be careful with escaping '&' which is common in OAuth URLs
+		// Using the "rundll32" method is often more reliable for URLs with special characters
+		// than "cmd /c start", avoiding shell escaping issues.
+		// cmd = "rundll32"
+		// args = []string{"url.dll,FileProtocolHandler", url}
+
+		// Alternatively, sticking to 'start' but ensuring quotes match
+		// "start" treats the first argument as title if it's quoted.
+		// We pass explicit empty title.
+		// Note: Go's exec.Command will quote arguments, so we rely on that.
+		args = []string{"/c", "start", "", escapedURL}
 	default: // "linux", "freebsd", "openbsd", "netbsd"
 		cmd = "xdg-open"
 		args = []string{url}

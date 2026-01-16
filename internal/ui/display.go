@@ -106,7 +106,7 @@ func DisplayQuotaSummary(summary *models.QuotaSummary) {
 	if summary.DefaultModelID != "" {
 		for _, model := range modelsList {
 			if model.ModelID == summary.DefaultModelID {
-				color.Cyan("  ⭐ Default Model: %s", model.DisplayName)
+				color.Cyan("  ⭐ Default Model: %s ⭐", model.DisplayName)
 				break
 			}
 		}
@@ -212,7 +212,7 @@ func DisplayAllAccountsQuota(results []*AccountQuotaResult) {
 
 	// Header
 	fmt.Println()
-	color.Cyan("  ✨ Khoata Quota Status - All Accounts")
+	color.Cyan("  ✨ Khoata Quota Status - All Accounts ✨")
 	fmt.Println()
 
 	// Create a table for each account
@@ -232,7 +232,7 @@ func DisplayAllAccountsQuota(results []*AccountQuotaResult) {
 		}
 
 		// Display account email
-		color.Cyan("  📧 %s", result.Email)
+		color.Cyan("  📩 %s", result.Email)
 		fmt.Println()
 
 		// Sort models by display name

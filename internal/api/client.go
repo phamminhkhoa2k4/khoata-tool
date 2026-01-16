@@ -393,8 +393,8 @@ func (c *Client) GetQuotaInfoForAccount(email string) (*models.QuotaSummary, err
 	// First, resolve project ID (this handles onboarding if needed)
 	_, err = c.ResolveProjectID()
 	if err != nil {
-		fmt.Printf("Warning: ResolveProjectID failed for %s: %v\n", email, err)
 		// Not a fatal error, continue without project ID
+		// fmt.Printf("Warning: ResolveProjectID failed for %s: %v\n", email, err)
 	}
 
 	// Fetch available models
