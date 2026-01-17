@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-
 	"github.com/fatih/color"
 	"github.com/phamminhkhoa2k4/khoata-tool/internal/api"
 	"github.com/phamminhkhoa2k4/khoata-tool/internal/auth"
@@ -234,6 +233,9 @@ Manage multiple accounts and check quotas for models like Claude 3.5 Sonnet, Gem
 	rootCmd.AddCommand(quotaCmd)
 	rootCmd.AddCommand(accountsCmd)
 	rootCmd.AddCommand(versionCmd)
+
+	// Hide completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

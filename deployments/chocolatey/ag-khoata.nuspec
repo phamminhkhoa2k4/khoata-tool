@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>ag-khoata</id>
+    <version>1.0.0</version>
+    <title>Ag-Khoata CLI</title>
+    <authors>Pham Minh Khoa</authors>
+    <projectUrl>https://github.com/phamminhkhoa2k4/khoata-tool</projectUrl>
+    <tags>ag-khoata anti-gravity quota cli</tags>
+    <summary>CLI tool to monitor Anti-Gravity AI model quota.</summary>
+    <description>Ag-Khoata is a CLI tool to monitor your Anti-Gravity (Google Cloud Code) AI model quota and usage in real-time. Supports multiple accounts and secure OAuth login.</description>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
