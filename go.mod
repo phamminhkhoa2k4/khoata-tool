@@ -1,6 +1,6 @@
 module github.com/phamminhkhoa2k4/khoata-tool
 
-go 1.20
+go 1.25.6
 
 require (
 	github.com/fatih/color v1.18.0
