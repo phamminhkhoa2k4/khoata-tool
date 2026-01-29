@@ -44,5 +44,10 @@ chmod +x "$BINARY_NAME"
 echo "Installing to $INSTALL_DIR..."
 sudo mv "$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"
 
-echo "Successfully installed $BINARY_NAME!"
-echo "Run '$BINARY_NAME --help' to get started."
+
+# Create symlink for 'khoata' alias
+echo "Creating alias 'khoata'..."
+sudo ln -sf "$INSTALL_DIR/$BINARY_NAME" "$INSTALL_DIR/khoata"
+
+echo "Successfully installed $BINARY_NAME (and alias 'khoata')!"
+echo "Run '$BINARY_NAME --help' or 'khoata --help' to get started."

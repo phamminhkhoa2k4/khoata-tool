@@ -27,11 +27,15 @@
 curl -sL https://raw.githubusercontent.com/phamminhkhoa2k4/khoata-tool/master/scripts/install.sh | bash
 # Hoặc dùng wget
 wget -qO- https://raw.githubusercontent.com/phamminhkhoa2k4/khoata-tool/master/scripts/install.sh | bash
+
+# Sau khi cài, bạn có thể gõ 'khoata' hoặc 'ag-khoata' ở bất cứ đâu.
 ```
 
 **Windows (Powershell)**
 ```powershell
 iwr -useb https://raw.githubusercontent.com/phamminhkhoa2k4/khoata-tool/master/scripts/install.ps1 | iex
+
+# Sau khi cài, bạn có thể gõ 'khoata' hoặc 'ag-khoata' ở bất cứ đâu.
 ```
 
 ### 🍺 Homebrew (macOS / Linux)
@@ -123,6 +127,8 @@ choco install ag-khoata
 Lệnh này sẽ mở trình duyệt để bạn đăng nhập tài khoản Google.
 ```bash
 .\ag-khoata.exe login
+# Hoặc nếu đã cài qua script:
+khoata login
 ```
 
 ### 2. Xem Quota (Quota Check)

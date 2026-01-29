@@ -17,7 +17,13 @@ $Url = "https://github.com/$Repo/releases/latest/download/$FileName"
 $OutputPath = Join-Path -Path $InstallDir -ChildPath $BinaryName
 
 Write-Host "Downloading $BinaryName from $Url..."
+Write-Host "Downloading $BinaryName from $Url..."
 Invoke-WebRequest -Uri $Url -OutFile $OutputPath
+
+# Create 'khoata' alias (copy of the exe)
+$AliasPath = Join-Path -Path $InstallDir -ChildPath "khoata.exe"
+Copy-Item -Path $OutputPath -Destination $AliasPath -Force
+Write-Host "Created alias: khoata.exe"
 
 # Add to PATH if not already present
 $UserPath = [Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::User)
