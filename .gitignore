@@ -8,7 +8,6 @@ ag-quota.exe
 
 # Go
 vendor/
-go.sum
 
 # IDE
 .vscode/
