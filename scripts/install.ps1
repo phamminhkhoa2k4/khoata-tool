@@ -17,8 +17,13 @@ $Url = "https://github.com/$Repo/releases/latest/download/$FileName"
 $OutputPath = Join-Path -Path $InstallDir -ChildPath $BinaryName
 
 Write-Host "Downloading $BinaryName from $Url..."
-Write-Host "Downloading $BinaryName from $Url..."
-Invoke-WebRequest -Uri $Url -OutFile $OutputPath
+try {
+    Invoke-WebRequest -Uri $Url -OutFile $OutputPath -ErrorAction Stop
+} catch {
+    Write-Error "Failed to download binary. Please ensure you have created a Release on GitHub and the file '$FileName' exists in that release."
+    Write-Error "Error details: $_"
+    exit 1
+}
 
 # Create 'khoata' alias (copy of the exe)
 $AliasPath = Join-Path -Path $InstallDir -ChildPath "khoata.exe"

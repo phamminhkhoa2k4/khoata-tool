@@ -37,7 +37,14 @@ echo "Detected $OS $ARCH..."
 LATEST_URL="https://github.com/${REPO}/releases/latest/download/${FILE_NAME}"
 
 echo "Downloading $BINARY_NAME from $LATEST_URL..."
-curl -sL -o "$BINARY_NAME" "$LATEST_URL"
+HTTP_CODE=$(curl -sL -w "%{http_code}" -o "$BINARY_NAME" "$LATEST_URL")
+
+if [ "$HTTP_CODE" -ne 200 ]; then
+    echo "Error: Failed to download binary (HTTP $HTTP_CODE)."
+    echo "Please ensure you have created a 'Latest' Release on GitHub with the correct assets."
+    rm -f "$BINARY_NAME"
+    exit 1
+fi
 
 chmod +x "$BINARY_NAME"
 
