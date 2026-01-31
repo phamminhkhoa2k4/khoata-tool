@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/phamminhkhoa2k4/khoata-tool/internal/auth"
@@ -135,7 +136,16 @@ func (c *Client) doRequest(method, endpoint string, body interface{}) ([]byte, e
 		}
 
 		// Client error, don't retry
-		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(responseBody))
+		bodyStr := string(responseBody)
+		if resp.StatusCode == 403 && (strings.Contains(bodyStr, "SERVICE_DISABLED") || strings.Contains(bodyStr, "Cloud Code Private API has not been used")) {
+			pID := c.projectID
+			if pID == "" {
+				pID = "YOUR_PROJECT_ID"
+			}
+			return nil, fmt.Errorf("Cloud Code Private API is disabled. Please enable it at: https://console.developers.google.com/apis/api/cloudcode-pa.googleapis.com/overview?project=%s", pID)
+		}
+
+		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, bodyStr)
 	}
 
 	return nil, fmt.Errorf("request failed after %d attempts: %w", MaxRetries+1, lastErr)
