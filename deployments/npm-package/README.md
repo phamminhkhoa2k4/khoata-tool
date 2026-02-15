@@ -126,13 +126,6 @@ choco install ag-khoata
    3. Tạo một **Release** mới (vào mục Releases -> Draft a new release).
    4. GitHub Actions sẽ tự động chạy, build file và đính kèm vào Release đó.
 
-   **Tự động Publish lên NPM:**
-   
-   Dự án cũng hỗ trợ tự động publish lên NPM khi có Release mới.
-   1. Vào Settings -> Secrets -> Actions.
-   2. Tạo secret `NPM_TOKEN` (Lấy từ npmjs.com -> Access Tokens).
-   3. Khi bạn tạo một Release mới, workflow sẽ tự động đẩy version đó lên NPM.
-
 ## 📖 Hướng dẫn sử dụng
 
 ### 1. Đăng nhập (Login)

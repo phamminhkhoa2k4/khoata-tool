@@ -1,0 +1,45 @@
+name: Publish to NPM
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  publish-npm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Update Version in package.json
+        run: |
+          # Get version from tag (remove 'v' prefix if present)
+          VERSION=${GITHUB_REF#refs/tags/}
+          VERSION=${VERSION#v}
+          echo "Setting version to $VERSION"
+          
+          cd deployments/npm-package
+          npm version $VERSION --no-git-tag-version
+
+      - name: Copy README and Assets
+        run: |
+          cp README.md deployments/npm-package/
+          cp image.png deployments/npm-package/
+
+      - name: Install Dependencies
+        run: |
+          cd deployments/npm-package
+          npm install
+
+      - name: Publish to NPM
+        run: |
+          cd deployments/npm-package
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
