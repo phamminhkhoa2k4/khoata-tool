@@ -74,6 +74,8 @@ func GetOAuthConfig() *oauth2.Config {
 		Scopes: []string{
 			"https://www.googleapis.com/auth/cloud-platform",
 			"https://www.googleapis.com/auth/userinfo.email",
+			"https://www.googleapis.com/auth/userinfo.profile",
+			"openid",
 		},
 	}
 }
@@ -237,38 +239,132 @@ func handleCallback(w http.ResponseWriter, r *http.Request, config *oauth2.Confi
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(w, `
 		<!DOCTYPE html>
-		<html>
+		<html lang="en">
 		<head>
+			<meta charset="UTF-8">
+			<meta name="viewport" content="width=device-width, initial-scale=1.0">
 			<title>Authentication Successful</title>
 			<style>
 				body {
-					font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+					margin: 0;
+					padding: 0;
+					height: 100vh;
 					display: flex;
 					justify-content: center;
 					align-items: center;
-					height: 100vh;
-					margin: 0;
-					background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
+					/* Deep Space Gradient */
+					background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+					font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+					color: #ffffff;
+					overflow: hidden;
 				}
+
 				.container {
-					background: white;
-					padding: 3rem;
-					border-radius: 10px;
-					box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+					position: relative;
+					background: rgba(0, 0, 0, 0.3); /* Darker semi-transparent bg */
+					backdrop-filter: blur(20px);
+					-webkit-backdrop-filter: blur(20px);
+					border-radius: 20px;
+					padding: 40px 60px;
+					box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+					border: 1px solid rgba(255, 255, 255, 0.1);
 					text-align: center;
-					max-width: 500px;
+					animation: fadeIn 1s ease-out;
 				}
-				h1 { color: #333; margin-top: 0; }
-				p { color: #666; font-size: 1.1rem; }
-				.success { color: #22c55e; font-size: 3rem; }
+
+				h1 {
+					font-size: 2.5rem;
+					margin-bottom: 15px;
+					font-weight: 300;
+					color: #fff;
+					text-shadow: 0 0 10px rgba(255,255,255,0.3);
+				}
+
+				p {
+					font-size: 1.1rem;
+					margin-bottom: 30px;
+					color: #bbb; /* Softer text color */
+					font-weight: 300;
+				}
+
+				.icon-circle {
+					display: inline-flex;
+					justify-content: center;
+					align-items: center;
+					width: 90px;
+					height: 90px;
+					background: rgba(34, 197, 94, 0.2); /* Green tint */
+					border: 1px solid rgba(34, 197, 94, 0.4);
+					border-radius: 50%%;
+					margin-bottom: 25px;
+					box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+				}
+
+				.checkmark {
+					font-size: 45px;
+					color: #4ade80; /* Brighter green */
+				}
+
+				.btn {
+					background: rgba(255, 255, 255, 0.1);
+					border: 1px solid rgba(255, 255, 255, 0.2);
+					padding: 12px 30px;
+					color: white;
+					text-decoration: none;
+					border-radius: 50px;
+					transition: all 0.3s ease;
+					font-weight: 500;
+					letter-spacing: 0.5px;
+					cursor: pointer;
+					display: inline-block;
+				}
+
+				.btn:hover {
+					background: rgba(255, 255, 255, 0.2);
+					box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+					transform: translateY(-2px);
+				}
+
+				@keyframes fadeIn {
+					from { opacity: 0; transform: translateY(20px); }
+					to { opacity: 1; transform: translateY(0); }
+				}
+				
+				/* Background shapes */
+				.shape {
+					position: absolute;
+					border-radius: 50%%;
+					z-index: -1;
+					filter: blur(80px);
+					opacity: 0.4;
+				}
+				.shape-1 {
+					top: -100px;
+					left: -100px;
+					width: 400px;
+					height: 400px;
+					background: #7928ca; /* Purple */
+				}
+				.shape-2 {
+					bottom: -100px;
+					right: -100px;
+					width: 400px;
+					height: 400px;
+					background: #008080; /* Teal */
+				}
 			</style>
 		</head>
 		<body>
+			<div class="shape shape-1"></div>
+			<div class="shape shape-2"></div>
 			<div class="container">
-				<div class="success">✓</div>
-				<h1>Authentication Successful!</h1>
-				<p>You have been successfully authenticated.</p>
-				<p>You can close this window and return to the terminal.</p>
+				<div class="icon-circle">
+					<span class="checkmark">✓</span>
+				</div>
+				<h1>Login Successful</h1>
+				<p>You have successfully authenticated with <strong>Ag-Khoata</strong>.</p>
+				<p>You can now close this tab and return to your terminal.</p>
+				<a href="#" onclick="window.close()" class="btn">Close Tab</a>
 			</div>
 		</body>
 		</html>
