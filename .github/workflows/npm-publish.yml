@@ -25,17 +25,14 @@ jobs:
           echo "Setting version to $VERSION"
           
           cd deployments/npm-package
-          npm version $VERSION --no-git-tag-version
+          npm pkg set version=$VERSION
 
       - name: Copy README and Assets
         run: |
           cp README.md deployments/npm-package/
           cp image.png deployments/npm-package/
 
-      - name: Install Dependencies
-        run: |
-          cd deployments/npm-package
-          npm install
+
 
       - name: Publish to NPM
         run: |
