@@ -1,0 +1,31 @@
+{
+  "name": "ag-khoata",
+  "version": "1.0.1",
+  "description": "A powerful CLI tool to monitor Anti-Gravity (Google Cloud Code) AI model quotas and usage in real-time. Supports multi-account management and secure OAuth2 authentication.",
+  "bin": {
+    "ag-khoata": "./cli.js",
+    "khoata": "./cli.js"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/phamminhkhoa2k4/khoata-tool.git"
+  },
+  "keywords": [
+    "cli",
+    "quota",
+    "google-cloud"
+  ],
+  "author": "Pham Minh Khoa",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/phamminhkhoa2k4/khoata-tool/issues"
+  },
+  "homepage": "https://github.com/phamminhkhoa2k4/khoata-tool#readme",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "preferGlobal": true
+}

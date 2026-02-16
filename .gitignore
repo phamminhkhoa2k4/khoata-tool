@@ -4,7 +4,7 @@ ag-quota.exe
 
 # Config
 .env
-*.json
+
 
 # Go
 vendor/
